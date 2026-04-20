@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>向内扎根，星火重燃</title>
+  <style>
+    :root {
+      --violet: #9d4edd;
+      --violet-light: #c77dff;
+      --violet-deep: #5a189a;
+      --gold: #ffb703;
+      --bg-top: #09101f;
+      --bg-mid: #0c1330;
+      --bg-bottom: #030307;
+      --panel: rgba(9, 11, 25, 0.84);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #030307;
+      color: #fff;
+      font-family: "STSong", "SimSun", serif;
+    }
+
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: linear-gradient(180deg, var(--bg-top), var(--bg-mid) 44%, var(--bg-bottom));
+    }
+
+    #ui {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .stat {
+      position: absolute;
+      top: 18px;
+      color: var(--violet-light);
+      font-size: 18px;
+      text-shadow: 0 0 8px rgba(199, 125, 255, 0.55);
+    }
+
+    #score-div {
+      left: 18px;
+    }
+
+    #hp-wrap {
+      right: 18px;
+      width: 168px;
+      height: 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(199, 125, 255, 0.62);
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    #hp-inner {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--violet), var(--violet-light));
+      transition: width 0.2s ease;
+    }
+
+    .modal {
+      pointer-events: auto;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: min(90vw, 560px);
+      max-height: 82vh;
+      overflow-y: auto;
+      padding: 28px;
+      border-radius: 22px;
+      background: var(--panel);
+      border: 1px solid rgba(199, 125, 255, 0.45);
+      box-shadow: 0 0 40px rgba(90, 24, 154, 0.18);
+      backdrop-filter: blur(18px);
+      display: none;
+      text-align: center;
+    }
+
+    .modal h1,
+    .modal h2 {
+      margin: 0 0 10px;
+      font-weight: 400;
+      color: var(--violet-light);
+      letter-spacing: 2px;
+    }
+
+    .modal p {
+      margin: 8px 0;
+      color: rgba(255, 255, 255, 0.82);
+      line-height: 1.75;
+    }
+
+    .btn {
+      pointer-events: auto;
+      margin-top: 14px;
+      padding: 10px 26px;
+      border-radius: 999px;
+      border: 1px solid rgba(199, 125, 255, 0.8);
+      background: rgba(157, 78, 221, 0.1);
+      color: var(--violet-light);
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .btn:hover {
+      background: rgba(157, 78, 221, 0.2);
+      box-shadow: 0 0 18px rgba(199, 125, 255, 0.18);
+    }
+
+    #quote {
+      margin: 14px 0;
+      color: var(--gold);
+      line-height: 1.7;
+      font-size: 15px;
+    }
+
+    #run-sparks {
+      margin-top: 12px;
+      display: grid;
+      gap: 8px;
+      text-align: left;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    .run-spark-item {
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(199, 125, 255, 0.22);
+      background: rgba(255, 255, 255, 0.04);
+      line-height: 1.6;
+      font-size: 13px;
+    }
+
+    .run-spark-item strong {
+      color: var(--gold);
+      font-weight: 400;
+    }
+
+    #spark-gallery-overlay {
+      pointer-events: auto;
+      position: fixed;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      padding: 22px 0;
+      background: rgba(4, 5, 15, 0.95);
+      backdrop-filter: blur(14px);
+      z-index: 10;
+    }
+
+    .gallery-header {
+      text-align: center;
+      margin-bottom: 14px;
+    }
+
+    .gallery-header h2 {
+      margin: 0 0 6px;
+      color: var(--violet-light);
+      font-weight: 400;
+      letter-spacing: 4px;
+    }
+
+    .progress-bar {
+      color: var(--gold);
+      font-size: 14px;
+    }
+
+    #gallery-grid {
+      width: min(92vw, 560px);
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(199, 125, 255, 0.2);
+      background: rgba(255, 255, 255, 0.03);
+      max-height: 46vh;
+      overflow-y: auto;
+    }
+
+    .spark-slot {
+      aspect-ratio: 1;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.22);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+
+    .spark-slot.unlocked {
+      color: #fff;
+      border: none;
+      background: linear-gradient(135deg, rgba(157, 78, 221, 0.86), rgba(199, 125, 255, 0.92));
+      box-shadow: 0 0 16px rgba(157, 78, 221, 0.2);
+      cursor: pointer;
+    }
+
+    #spark-detail-card {
+      width: min(88vw, 560px);
+      margin-top: 14px;
+      min-height: 120px;
+      padding: 18px;
+      border-radius: 16px;
+      border: 1px solid rgba(199, 125, 255, 0.22);
+      background: rgba(255, 255, 255, 0.04);
+      text-align: center;
+      line-height: 1.7;
+    }
+
+    #detail-text {
+      font-size: 15px;
+      color: #f4f0ff;
+    }
+
+    #detail-author {
+      margin-top: 8px;
+      color: var(--gold);
+      font-size: 13px;
+    }
+
+    #toast {
+      position: absolute;
+      left: 50%;
+      bottom: 20px;
+      transform: translateX(-50%);
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(199, 125, 255, 0.35);
+      background: rgba(10, 11, 28, 0.92);
+      color: var(--violet-light);
+      display: none;
+      box-shadow: 0 0 20px rgba(157, 78, 221, 0.12);
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+
+  <div id="ui">
+    <div id="score-div" class="stat">第 0 层</div>
+    <div id="hp-wrap" class="stat"><div id="hp-inner"></div></div>
+
+    <div id="start-modal" class="modal" style="display: block;">
+      <h1>向内扎根，星火重燃</h1>
+      <p>点击屏幕，开始觉醒之旅。</p>
+      <p>前 10 层是教学区。每颗星星都会回血，并随机触发一条女性主义格言。</p>
+      <button id="start-btn" class="btn">开始下潜</button>
+    </div>
+
+    <div id="death-modal" class="modal">
+      <h2>星火暂熄</h2>
+      <p id="death-summary">本局下潜至第 0 层。</p>
+      <div id="quote">这一次没有带回新的星火，但火种仍在。</div>
+      <div id="run-sparks"></div>
+      <button id="restart-btn" class="btn">再次重燃</button>
+      <button id="open-gallery-btn" class="btn">星火图鉴</button>
+    </div>
+
+    <div id="toast"></div>
+  </div>
+
+  <div id="spark-gallery-overlay">
+    <div class="gallery-header">
+      <h2>星火图鉴</h2>
+      <div class="progress-bar">收集进度: <span id="unlock-count">0</span> / <span id="spark-total">0</span></div>
+    </div>
+    <div id="gallery-grid"></div>
+    <div id="spark-detail-card">
+      <div id="detail-text">点击已解锁的星火阅读格言。</div>
+      <div id="detail-author"></div>
+    </div>
+    <button id="close-gallery-btn" class="btn">返回</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const startModal = document.getElementById("start-modal");
+    const deathModal = document.getElementById("death-modal");
+    const startBtn = document.getElementById("start-btn");
+    const restartBtn = document.getElementById("restart-btn");
+    const openGalleryBtn = document.getElementById("open-gallery-btn");
+    const scoreDiv = document.getElementById("score-div");
+    const hpInner = document.getElementById("hp-inner");
+    const quote = document.getElementById("quote");
+    const deathSummary = document.getElementById("death-summary");
+    const runSparks = document.getElementById("run-sparks");
+    const toast = document.getElementById("toast");
+    const galleryOverlay = document.getElementById("spark-gallery-overlay");
+    const galleryGrid = document.getElementById("gallery-grid");
+    const unlockCount = document.getElementById("unlock-count");
+    const sparkTotal = document.getElementById("spark-total");
+    const detailText = document.getElementById("detail-text");
+    const detailAuthor = document.getElementById("detail-author");
+    const closeGalleryBtn = document.getElementById("close-gallery-btn");
+
+    const SPARK_DATA = [
+      { id: 1, text: "一个人并非生而为女人，而是成为女人。", author: "西蒙娜·德·波伏娃" },
+      { id: 2, text: "女人若想写小说，就必须有钱，并且有一间属于自己的房间。", author: "弗吉尼亚·伍尔夫" },
+      { id: 3, text: "我敢猜测，那些写下许多诗却没有署名的无名氏，往往是女人。", author: "弗吉尼亚·伍尔夫" },
+      { id: 4, text: "你尽可以锁起图书馆，但你无法在我思想的自由上设下门闩。", author: "弗吉尼亚·伍尔夫" },
+      { id: 5, text: "女人几个世纪以来一直像镜子一样，把男人的身形映照成两倍大小。", author: "弗吉尼亚·伍尔夫" },
+      { id: 6, text: "那些不移动的人不会注意到他们的枷锁。", author: "罗莎·卢森堡" },
+      { id: 7, text: "如果我不能跳舞，我就不想加入你的革命。", author: "艾玛·戈德曼" },
+      { id: 8, text: "女性主义是为了所有人。", author: "贝尔·胡克斯" },
+      { id: 9, text: "教育本身就是自由的实践。", author: "贝尔·胡克斯" },
+      { id: 10, text: "语言也是一个斗争的地方。", author: "贝尔·胡克斯" },
+      { id: 11, text: "照顾自己不是自我放纵，而是自我保存，这本身就是一种政治斗争。", author: "奥黛丽·洛德" },
+      { id: 12, text: "主人的工具永远拆不掉主人的房子。", author: "奥黛丽·洛德" },
+      { id: 13, text: "愤怒里装满了信息和能量。", author: "奥黛丽·洛德" },
+      { id: 14, text: "我并不接受那些我无法改变的事；我正在改变那些我无法接受的事。", author: "安吉拉·戴维斯" },
+      { id: 15, text: "自由是一场持续不断的斗争。", author: "安吉拉·戴维斯" },
+      { id: 16, text: "女性属于所有做决定的地方。", author: "鲁斯·巴德·金斯伯格" },
+      { id: 17, text: "我们都应该成为女性主义者。", author: "奇玛曼达·恩戈兹·阿迪契" },
+      { id: 18, text: "我们教女孩收缩自己，让自己变小。", author: "奇玛曼达·恩戈兹·阿迪契" },
+      { id: 19, text: "所谓问题，是那个一直没有被命名的问题。", author: "贝蒂·弗里丹" },
+      { id: 20, text: "男人有他们的权利，也仅此而已；女人有她们的权利，也不能更少。", author: "苏珊·安东尼" },
+      { id: 21, text: "我不是女人吗？", author: "索杰纳·特鲁斯" },
+      { id: 22, text: "哪里有女人，哪里就有魔法。", author: "恩托扎凯·尚格" },
+      { id: 23, text: "如果有一本你想读却还没人写的书，那就由你来写。", author: "托妮·莫里森" },
+      { id: 24, text: "当一个女人站出来为自己发声时，她也在为所有女人发声。", author: "玛雅·安杰卢" },
+      { id: 25, text: "我不希望女性凌驾于男性之上，我希望女性凌驾于自己之上。", author: "玛丽·沃斯通克拉夫特" },
+      { id: 26, text: "我发声，不是为了提高嗓门，而是为了让没有声音的人被听见。", author: "玛拉拉·优素福扎伊" },
+      { id: 27, text: "没有人能在未经你同意的情况下让你觉得自己低人一等。", author: "埃莉诺·罗斯福" },
+      { id: 28, text: "一个自由的女人，恰恰是与男人相反的。", author: "西蒙娜·德·波伏娃" },
+      { id: 29, text: "我要求每一个人，都承认女人是人。", author: "克拉拉·蔡特金" },
+      { id: 30, text: "女人必须拥有自己的位置，而不是被安放的位置。", author: "克拉拉·蔡特金" },
+      { id: 31, text: "女性不是天生的受害者，女性是被制造成沉默的。", author: "娜瓦尔·萨达维" },
+      { id: 32, text: "如果你不讲述自己的故事，别人就会替你讲。", author: "奇玛曼达·恩戈兹·阿迪契" },
+      { id: 33, text: "历史上最勇敢的行为之一，就是为自己命名。", author: "奥黛丽·洛德" },
+      { id: 34, text: "写作是一种把沉默变成语言与行动的方式。", author: "奥黛丽·洛德" },
+      { id: 35, text: "女性主义不是让女人变得强大，女人本来就很强大。", author: "G.D. 安德森" },
+      { id: 36, text: "我们需要的是一种能让女孩不必道歉地活着的世界。", author: "奇玛曼达·恩戈兹·阿迪契" },
+      { id: 37, text: "每个女人的第一责任，是成为她自己。", author: "阿德里安娜·里奇" },
+      { id: 38, text: "没有经济独立，所谓自由常常只是装饰。", author: "弗吉尼亚·伍尔夫" },
+      { id: 39, text: "你不能通过保持安静来保护自己。", author: "奥黛丽·洛德" },
+      { id: 40, text: "请想象一下，如果女人不再害怕，这个世界会怎样。", author: "格洛丽亚·斯泰纳姆" },
+      { id: 41, text: "真理并不会因为说出它的人是女人而减损。", author: "玛丽·沃斯通克拉夫特" },
+      { id: 42, text: "团结不是相同，而是差异中的共同前进。", author: "贝尔·胡克斯" },
+      { id: 43, text: "我们的身体首先属于我们自己。", author: "西蒙娜·德·波伏娃" },
+      { id: 44, text: "我宁愿反叛，也不愿顺从地凋零。", author: "娜瓦尔·萨达维" },
+      { id: 45, text: "成为母亲不该是女人价值的唯一尺度。", author: "贝蒂·弗里丹" },
+      { id: 46, text: "任何一个女孩都不该因为梦想太大而被嘲笑。", author: "玛拉拉·优素福扎伊" },
+      { id: 47, text: "女人的愤怒并不危险，压抑女人的愤怒才危险。", author: "奥黛丽·洛德" },
+      { id: 48, text: "要想看得更远，就要先拒绝被缩小。", author: "格洛丽亚·斯泰纳姆" },
+      { id: 49, text: "当我们教育一个女孩时，我们就在改变一个时代。", author: "玛拉拉·优素福扎伊" },
+      { id: 50, text: "我相信女人必须拥有选择生活方式的全部权利。", author: "鲁斯·巴德·金斯伯格" },
+      { id: 51, text: "姐妹情谊依然强大。", author: "罗宾·摩根" },
+      { id: 52, text: "革命从不是请愿而来，它来自拒绝服从。", author: "艾玛·戈德曼" },
+      { id: 53, text: "女孩子应当被教导如何占据空间，而不是如何让路。", author: "奇玛曼达·恩戈兹·阿迪契" },
+      { id: 54, text: "我写作，是因为我拒绝被消失。", author: "托妮·莫里森" },
+      { id: 55, text: "如果你沉默，你也会被定义。", author: "贝尔·胡克斯" },
+      { id: 56, text: "自由不是恩赐，而是实践。", author: "安吉拉·戴维斯" },
+      { id: 57, text: "政治最私人，私人也最政治。", author: "卡罗尔·汉尼施" },
+      { id: 58, text: "我不是要进入你的世界，我是要把世界改写。", author: "贝尔·胡克斯" },
+      { id: 59, text: "我们必须把恐惧转化成方法。", author: "奥黛丽·洛德" },
+      { id: 60, text: "写作让女人把被打断的人生重新接起来。", author: "弗吉尼亚·伍尔夫" },
+      { id: 61, text: "我不接受任何一种以爱为名的支配。", author: "贝尔·胡克斯" },
+      { id: 62, text: "女人不是次等版本，女人是完整的人。", author: "西蒙娜·德·波伏娃" },
+      { id: 63, text: "不必等待被允许，先开始做。", author: "苏珊·安东尼" },
+      { id: 64, text: "被压抑的经验一旦被说出，就会变成知识。", author: "贝蒂·弗里丹" },
+      { id: 65, text: "女性的写作，不是边角，而是中心。", author: "弗吉尼亚·伍尔夫" },
+      { id: 66, text: "每个女孩都该拥有学习、讲话和选择的自由。", author: "玛拉拉·优素福扎伊" },
+      { id: 67, text: "压迫从不只长着一张脸。", author: "安吉拉·戴维斯" },
+      { id: 68, text: "我们需要的不是更多顺从，而是更多发问。", author: "格洛丽亚·斯泰纳姆" },
+      { id: 69, text: "让女人保持幼小，是最有效的统治。", author: "娜瓦尔·萨达维" },
+      { id: 70, text: "所有制度都在教育女人怀疑自己。", author: "贝尔·胡克斯" },
+      { id: 71, text: "对不公的命名，本身就是第一步反抗。", author: "奥黛丽·洛德" },
+      { id: 72, text: "女人的时间，不该永远只属于别人。", author: "弗吉尼亚·伍尔夫" },
+      { id: 73, text: "我相信未来会由那些不肯后退的女孩书写。", author: "玛拉拉·优素福扎伊" },
+      { id: 74, text: "任何一次女性的站起，都会替后来者开路。", author: "玛雅·安杰卢" },
+      { id: 75, text: "亲密关系也需要平等，否则它只是包装过的权力。", author: "贝尔·胡克斯" },
+      { id: 76, text: "世界教女人收缩，而自由要求我们伸展。", author: "奇玛曼达·恩戈兹·阿迪契" },
+      { id: 77, text: "教育不是装饰，它是生存。", author: "玛拉拉·优素福扎伊" },
+      { id: 78, text: "真正的体面来自自主，而不是取悦。", author: "西蒙娜·德·波伏娃" },
+      { id: 79, text: "女人的工作被看不见，是制度性的失明。", author: "贝蒂·弗里丹" },
+      { id: 80, text: "没有任何神话能替女人活她自己的人生。", author: "娜瓦尔·萨达维" },
+      { id: 81, text: "当女人彼此讲述经验时，历史会重新排列。", author: "格洛丽亚·斯泰纳姆" },
+      { id: 82, text: "所谓天赋，常常只是终于被允许的能力。", author: "弗吉尼亚·伍尔夫" },
+      { id: 83, text: "被爱不应以失去自己为代价。", author: "贝尔·胡克斯" },
+      { id: 84, text: "我不是为了适应旧秩序而受教育。", author: "安吉拉·戴维斯" },
+      { id: 85, text: "当女人掌握语言，沉默就失去权威。", author: "奥黛丽·洛德" },
+      { id: 86, text: "每一种对女孩的轻视，都会在社会里延长成结构。", author: "奇玛曼达·恩戈兹·阿迪契" },
+      { id: 87, text: "你无需先被理解，才值得被尊重。", author: "玛雅·安杰卢" },
+      { id: 88, text: "自由不是被授予，而是被实践出来。", author: "鲁斯·巴德·金斯伯格" },
+      { id: 89, text: "把女人从边缘写回中心，是一项持续工程。", author: "托妮·莫里森" },
+      { id: 90, text: "没有安全感的顺从，不会换来自由。", author: "艾玛·戈德曼" },
+      { id: 91, text: "当女孩看见彼此，她们会长得更大。", author: "格洛丽亚·斯泰纳姆" },
+      { id: 92, text: "世界习惯把女人切碎，而女性主义在练习完整。", author: "贝尔·胡克斯" },
+      { id: 93, text: "你不需要先变得完美，才有资格反抗。", author: "奥黛丽·洛德" },
+      { id: 94, text: "让女性贫穷，是让她们更难自由。", author: "弗吉尼亚·伍尔夫" },
+      { id: 95, text: "我不接受任何一种要求女人缩小梦想的现实主义。", author: "玛拉拉·优素福扎伊" },
+      { id: 96, text: "如果制度要求女人安静，那么说话就是行动。", author: "安吉拉·戴维斯" },
+      { id: 97, text: "一代女性的站起，会抬高下一代的地平线。", author: "玛雅·安杰卢" },
+      { id: 98, text: "平等不是温和愿望，它是最低正义。", author: "鲁斯·巴德·金斯伯格" },
+      { id: 99, text: "女人的生命不该只被解释，她们也应当被倾听。", author: "托妮·莫里森" },
+      { id: 100, text: "女性主义并不是终点，它是不断把人从规训里救出来的过程。", author: "贝尔·胡克斯" }
+    ];
+
+    const GRAVITY = 0.42;
+    const FRICTION = 0.84;
+    const PLATFORM_GAP = 140;
+    const STAR_HEAL = 16;
+    const TUTORIAL_LAYERS = 10;
+
+    let player;
+    let platforms = [];
+    let trailParticles = [];
+    let deathParticles = [];
+    let skyStars = [];
+    let score = 0;
+    let hp = 100;
+    let scrollSpeed = 1.05;
+    let gameState = "START";
+    let touchDirection = 0;
+    let toastTimer = 0;
+    let currentSpark = null;
+    let runSparkLog = [];
+    let audioEngine = null;
+
+    function resize() {
+      canvas.width = Math.min(window.innerWidth, 480);
+      canvas.height = window.innerHeight;
+      createStarfield();
+    }
+
+    class AudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.timer = 0;
+        this.step = 0;
+        this.started = false;
+        this.tempo = 72;
+        this.melody = [392, 440, 494, 523, 494, 440, 392, 370, 392, 440, 494, 587, 523, 494, 440, 392];
+        this.bass = [98, 110, 123, 110, 98, 110, 92, 98];
+        this.pad = [196, 220, 247, 220];
+      }
+
+      ensure() {
+        if (!this.ctx) {
+          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (this.ctx.state === "suspended") {
+          this.ctx.resume();
+        }
+      }
+
+      playTone(freq, duration, type, volume, when = null, glide = null) {
+        if (!this.ctx) return;
+        const start = when ?? this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const filter = this.ctx.createBiquadFilter();
+
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, start);
+        if (glide) {
+          osc.frequency.linearRampToValueAtTime(glide, start + duration);
+        }
+
+        filter.type = "lowpass";
+        filter.frequency.setValueAtTime(620, start);
+        gain.gain.setValueAtTime(0.0001, start);
+        gain.gain.linearRampToValueAtTime(volume, start + 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(start);
+        osc.stop(start + duration + 0.06);
+      }
+
+      startMusic() {
+        this.ensure();
+        if (this.started) return;
+        this.started = true;
+        const stepMs = (60 / this.tempo) * 1000 / 2;
+
+        this.timer = setInterval(() => {
+          if (gameState !== "PLAYING") return;
+          const now = this.ctx.currentTime;
+          const melodyNote = this.melody[this.step % this.melody.length];
+          const bassNote = this.bass[Math.floor(this.step / 2) % this.bass.length];
+          const padNote = this.pad[Math.floor(this.step / 4) % this.pad.length];
+
+          if (this.step % 8 === 0) {
+            this.playTone(padNote, 1.2, "triangle", 0.008, now);
+          }
+
+          if (this.step % 2 === 0) {
+            this.playTone(melodyNote, 0.52, "triangle", 0.012, now + 0.05);
+          } else {
+            this.playTone(melodyNote * 0.5, 0.34, "triangle", 0.005, now + 0.08);
+          }
+
+          if (this.step % 4 === 0) {
+            this.playTone(bassNote, 0.64, "triangle", 0.008, now);
+          }
+
+          this.step++;
+        }, stepMs);
+      }
+
+      playJump() {
+        this.ensure();
+        this.playTone(494, 0.14, "triangle", 0.012, undefined, 587);
+      }
+
+      playStar() {
+        this.ensure();
+        const now = this.ctx.currentTime;
+        this.playTone(523, 0.22, "triangle", 0.013, now);
+        this.playTone(659, 0.28, "triangle", 0.011, now + 0.14);
+      }
+
+      playHurt() {
+        this.ensure();
+        this.playTone(196, 0.18, "triangle", 0.010, undefined, 147);
+      }
+
+      playGameOver() {
+        this.ensure();
+        const now = this.ctx.currentTime;
+        this.playTone(330, 0.30, "triangle", 0.010, now);
+        this.playTone(262, 0.42, "triangle", 0.009, now + 0.24);
+        this.playTone(196, 0.56, "triangle", 0.008, now + 0.54);
+      }
+    }
+
+    class Player {
+      constructor() {
+        this.w = 28;
+        this.h = 28;
+        this.r = 14;
+        this.reset();
+      }
+
+      reset() {
+        this.x = canvas.width / 2 - this.w / 2;
+        this.y = 120;
+        this.vx = 0;
+        this.vy = 0;
+      }
+
+      update() {
+        this.vy += GRAVITY;
+        this.y += this.vy;
+        this.x += this.vx;
+        this.vx *= FRICTION;
+
+        if (Math.abs(this.vx) > 0.3 || Math.abs(this.vy) > 0.6) {
+          createTrail(this.x + this.w / 2, this.y + this.h / 2, this.vx, this.vy);
+        }
+
+        if (this.x < 0) this.x = 0;
+        if (this.x > canvas.width - this.w) this.x = canvas.width - this.w;
+      }
+
+      draw() {
+        ctx.save();
+        const cx = this.x + this.w / 2;
+        const cy = this.y + this.h / 2;
+
+        const outer = ctx.createRadialGradient(cx, cy, 2, cx, cy, this.r + 12);
+        outer.addColorStop(0, "rgba(255,255,255,0.95)");
+        outer.addColorStop(0.28, "rgba(231,208,255,0.88)");
+        outer.addColorStop(0.62, "rgba(199,125,255,0.74)");
+        outer.addColorStop(1, "rgba(157,78,221,0)");
+        ctx.fillStyle = outer;
+        ctx.beginPath();
+        ctx.arc(cx, cy, this.r + 12, 0, Math.PI * 2);
+        ctx.fill();
+
+        const core = ctx.createRadialGradient(cx - 3, cy - 3, 1, cx, cy, this.r);
+        core.addColorStop(0, "#ffffff");
+        core.addColorStop(0.24, "#f2e7ff");
+        core.addColorStop(0.65, "#c77dff");
+        core.addColorStop(1, "#7b2cbf");
+        ctx.shadowBlur = 24;
+        ctx.shadowColor = "rgba(199,125,255,0.72)";
+        ctx.fillStyle = core;
+        ctx.beginPath();
+        ctx.arc(cx, cy, this.r, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = "rgba(255,255,255,0.28)";
+        ctx.beginPath();
+        ctx.arc(cx - 4, cy - 5, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    class Platform {
+      constructor(y, type, layerNumber, x) {
+        this.w = 104;
+        this.h = 16;
+        this.x = x;
+        this.y = y;
+        this.type = type;
+        this.layerNumber = layerNumber;
+        this.state = 0;
+        this.hasStar = shouldPlaceStar(layerNumber);
+        this.starTaken = false;
+      }
+
+      draw() {
+        ctx.save();
+        if (this.type === "SPIKE") {
+          ctx.fillStyle = "#43223d";
+        } else if (this.type === "SPRING") {
+          ctx.fillStyle = "#3f2a57";
+        } else if (this.type === "CONVEYOR_L" || this.type === "CONVEYOR_R") {
+          ctx.fillStyle = "#35204f";
+        } else if (this.type === "FLIP") {
+          ctx.fillStyle = "#30203f";
+        } else {
+          ctx.fillStyle = "#2a2333";
+        }
+
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = "rgba(157, 78, 221, 0.18)";
+        ctx.fillRect(this.x, this.y, this.w, this.h);
+
+        const sheen = ctx.createLinearGradient(this.x, this.y, this.x, this.y + this.h);
+        sheen.addColorStop(0, "rgba(255,255,255,0.08)");
+        sheen.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.fillStyle = sheen;
+        ctx.fillRect(this.x, this.y, this.w, this.h);
+
+        if (this.type === "SPIKE") {
+          ctx.fillStyle = "#ff6b88";
+          for (let i = 0; i < this.w; i += 10) {
+            ctx.beginPath();
+            ctx.moveTo(this.x + i, this.y);
+            ctx.lineTo(this.x + i + 5, this.y - 6);
+            ctx.lineTo(this.x + i + 10, this.y);
+            ctx.fill();
+          }
+        }
+
+        if (this.type === "CONVEYOR_L" || this.type === "CONVEYOR_R") {
+          ctx.fillStyle = "rgba(255,255,255,0.65)";
+          ctx.font = "10px Arial";
+          ctx.fillText(this.type === "CONVEYOR_L" ? "<<<<" : ">>>>", this.x + 30, this.y + 12);
+        }
+
+        if (this.hasStar && !this.starTaken) {
+          drawCollectStar(this.x + this.w / 2, this.y - 14);
+        }
+
+        ctx.restore();
+      }
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function createStarfield() {
+      const total = Math.max(60, Math.floor((canvas.width * canvas.height) / 4200));
+      skyStars = Array.from({ length: total }, (_, index) => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        size: Math.random() * 1.7 + 0.5,
+        alpha: Math.random() * 0.45 + 0.15,
+        twinkle: Math.random() * Math.PI * 2,
+        hue: index % 10 === 0 ? "255,183,3" : index % 4 === 0 ? "199,125,255" : "255,255,255"
+      }));
+    }
+
+    function drawStarfield() {
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, "#09101f");
+      gradient.addColorStop(0.45, "#0c1330");
+      gradient.addColorStop(1, "#030307");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.save();
+      const time = performance.now() * 0.001;
+      skyStars.forEach((star, index) => {
+        const glow = 0.55 + Math.sin(time + star.twinkle) * 0.35;
+        const alpha = Math.max(0.08, star.alpha * glow);
+        ctx.fillStyle = `rgba(${star.hue}, ${alpha})`;
+        ctx.shadowBlur = index % 7 === 0 ? 10 : 5;
+        ctx.shadowColor = `rgba(${star.hue}, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (index % 12 === 0) {
+          ctx.strokeStyle = `rgba(${star.hue}, ${alpha * 0.45})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(star.x - 4, star.y);
+          ctx.lineTo(star.x + 4, star.y);
+          ctx.moveTo(star.x, star.y - 4);
+          ctx.lineTo(star.x, star.y + 4);
+          ctx.stroke();
+        }
+      });
+      ctx.restore();
+    }
+
+    function drawCeiling() {
+      ctx.save();
+      ctx.fillStyle = "rgba(255,255,255,0.08)";
+      for (let i = 0; i < canvas.width; i += 22) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i + 11, 18);
+        ctx.lineTo(i + 22, 0);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawCollectStar(x, y) {
+      ctx.save();
+      ctx.fillStyle = "#ffb703";
+      ctx.shadowBlur = 14;
+      ctx.shadowColor = "rgba(255,183,3,0.9)";
+      ctx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const outer = -Math.PI / 2 + (i * Math.PI * 2) / 5;
+        const inner = outer + Math.PI / 5;
+        const ox = x + Math.cos(outer) * 8;
+        const oy = y + Math.sin(outer) * 8;
+        const ix = x + Math.cos(inner) * 3.5;
+        const iy = y + Math.sin(inner) * 3.5;
+        if (i === 0) ctx.moveTo(ox, oy);
+        else ctx.lineTo(ox, oy);
+        ctx.lineTo(ix, iy);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function createTrail(x, y, vx, vy) {
+      trailParticles.push({
+        x: x - vx * 1.8,
+        y: y - vy * 1.6,
+        vx: -vx * 0.08 + (Math.random() - 0.5) * 0.18,
+        vy: -vy * 0.08 + (Math.random() - 0.5) * 0.18,
+        size: 1.5 + Math.random() * 2.5,
+        life: 18 + Math.random() * 12,
+        color: Math.random() > 0.4 ? "199,125,255" : "255,255,255"
+      });
+    }
+
+    function createRipple(x, y) {
+      for (let i = 0; i < 8; i++) {
+        trailParticles.push({
+          x,
+          y,
+          vx: (Math.random() - 0.5) * 1.4,
+          vy: -Math.random() * 0.9,
+          size: 1.6 + Math.random() * 2.2,
+          life: 16 + Math.random() * 10,
+          color: i % 2 === 0 ? "199,125,255" : "157,78,221"
+        });
+      }
+    }
+
+    function createDeathFlames() {
+      const cx = player.x + player.w / 2;
+      const cy = player.y + player.h / 2;
+      deathParticles = [];
+      for (let i = 0; i < 56; i++) {
+        deathParticles.push({
+          x: cx,
+          y: cy,
+          vx: (Math.random() - 0.5) * 2.4,
+          vy: -Math.random() * 3.2 - 0.6,
+          size: 2 + Math.random() * 4,
+          life: 46 + Math.random() * 28,
+          color: i % 3 === 0 ? "255,183,3" : i % 2 === 0 ? "255,110,64" : "199,125,255"
+        });
+      }
+    }
+
+    function updateParticleList(list, lift) {
+      list.forEach((p) => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += lift;
+        p.life -= 1;
+      });
+      return list.filter((p) => p.life > 0);
+    }
+
+    function drawParticleList(list, blur) {
+      list.forEach((p) => {
+        const alpha = Math.max(0, p.life / 70);
+        ctx.save();
+        ctx.fillStyle = `rgba(${p.color}, ${alpha})`;
+        ctx.shadowBlur = blur;
+        ctx.shadowColor = `rgba(${p.color}, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+    }
+
+    function getUnlockedList() {
+      return JSON.parse(localStorage.getItem("spark_unlocked") || "[]");
+    }
+
+    function setUnlockedList(list) {
+      localStorage.setItem("spark_unlocked", JSON.stringify(list));
+    }
+
+    function shouldPlaceStar(layerNumber) {
+      if (layerNumber <= 0) return false;
+      if (layerNumber === 3 || layerNumber === 6 || layerNumber === 10) return true;
+      return layerNumber % 20 === 0;
+    }
+
+    function getPlatformType(layerNumber) {
+      if (layerNumber <= TUTORIAL_LAYERS) return "NORMAL";
+      if (layerNumber <= 18) {
+        return ["NORMAL", "NORMAL", "NORMAL", "SPRING"][Math.floor(Math.random() * 4)];
+      }
+      if (layerNumber <= 32) {
+        return ["NORMAL", "SPRING", "NORMAL", "FLIP", "CONVEYOR_L", "CONVEYOR_R"][Math.floor(Math.random() * 6)];
+      }
+      return ["NORMAL", "SPRING", "FLIP", "CONVEYOR_L", "CONVEYOR_R", "SPIKE"][Math.floor(Math.random() * 6)];
+    }
+
+    function getPlatformX(lastX, layerNumber) {
+      const minX = 20;
+      const maxX = canvas.width - 124;
+      if (lastX === null) return clamp(canvas.width / 2 - 52, minX, maxX);
+      const maxStep = layerNumber <= TUTORIAL_LAYERS ? 40 : layerNumber < 25 ? 76 : 105;
+      return clamp(lastX + (Math.random() * 2 - 1) * maxStep, minX, maxX);
+    }
+
+    function addPlatform(platform) {
+      platforms.push(platform);
+      platforms.sort((a, b) => a.y - b.y);
+    }
+
+    function spawnPlatform(y, layerNumber, x) {
+      addPlatform(new Platform(y, getPlatformType(layerNumber), layerNumber, x));
+    }
+
+    function updateDifficulty() {
+      if (score < 10) {
+        scrollSpeed = 1.05;
+      } else if (score < 22) {
+        scrollSpeed = 1.22;
+      } else if (score < 38) {
+        scrollSpeed = 1.45;
+      } else if (score < 58) {
+        scrollSpeed = 1.72;
+      } else {
+        scrollSpeed = 2.0;
+      }
+    }
+
+    function showToast(message) {
+      toast.innerText = message;
+      toast.style.display = "block";
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.style.display = "none";
+      }, 1800);
+    }
+
+    function updateHud() {
+      scoreDiv.innerText = `第 ${score} 层`;
+      hpInner.style.width = `${Math.max(0, Math.min(100, hp))}%`;
+    }
+
+    function collectStar(platform) {
+      if (platform.starTaken) return;
+      platform.starTaken = true;
+      hp = Math.min(100, hp + STAR_HEAL);
+
+      const spark = SPARK_DATA[Math.floor(Math.random() * SPARK_DATA.length)];
+      const unlocked = getUnlockedList();
+      currentSpark = spark;
+      runSparkLog.push(spark);
+
+      if (!unlocked.includes(spark.id)) {
+        unlocked.push(spark.id);
+        setUnlockedList(unlocked);
+        showToast(`解锁新星火：${spark.author}`);
+      } else {
+        showToast(`星星回响：${spark.author}`);
+      }
+
+      if (audioEngine) audioEngine.playStar();
+    }
+
+    function renderRunSparks() {
+      if (!runSparkLog.length) {
+        runSparks.innerHTML = '<div class="run-spark-item">本局还没有带回新的星火。</div>';
+        return;
+      }
+
+      runSparks.innerHTML = runSparkLog.slice(-8).reverse().map((item) => `
+        <div class="run-spark-item">
+          <strong>${item.author}</strong><br />
+          “${item.text}”
+        </div>
+      `).join("");
+    }
+
+    function renderGallery() {
+      const unlocked = getUnlockedList();
+      galleryGrid.innerHTML = "";
+      unlockCount.innerText = unlocked.length;
+      sparkTotal.innerText = SPARK_DATA.length;
+      detailText.innerText = "点击已解锁的星火阅读格言。";
+      detailAuthor.innerText = "";
+
+      for (let i = 1; i <= SPARK_DATA.length; i++) {
+        const slot = document.createElement("div");
+        const isUnlocked = unlocked.includes(i);
+        slot.className = `spark-slot ${isUnlocked ? "unlocked" : ""}`;
+        slot.innerText = i;
+        if (isUnlocked) {
+          slot.addEventListener("click", () => {
+            const data = SPARK_DATA.find((spark) => spark.id === i);
+            if (!data) return;
+            detailText.innerText = `“${data.text}”`;
+            detailAuthor.innerText = `—— ${data.author}`;
+          });
+        }
+        galleryGrid.appendChild(slot);
+      }
+    }
+
+    function toggleGallery(show) {
+      if (show) {
+        renderGallery();
+      }
+      galleryOverlay.style.display = show ? "flex" : "none";
+      if (!show && gameState === "DEAD") {
+        deathModal.style.display = "block";
+      }
+    }
+
+    function initGame() {
+      if (!audioEngine) {
+        audioEngine = new AudioEngine();
+      }
+      audioEngine.ensure();
+      audioEngine.startMusic();
+
+      player = new Player();
+      platforms = [];
+      trailParticles = [];
+      deathParticles = [];
+      score = 0;
+      hp = 100;
+      scrollSpeed = 1.05;
+      currentSpark = null;
+      runSparkLog = [];
+      touchDirection = 0;
+      gameState = "PLAYING";
+
+      startModal.style.display = "none";
+      deathModal.style.display = "none";
+      galleryOverlay.style.display = "none";
+      toast.style.display = "none";
+
+      const startY = canvas.height * 0.72;
+      const startX = getPlatformX(null, 1);
+      addPlatform(new Platform(startY, "NORMAL", 1, startX));
+      player.x = startX + 52 - player.w / 2;
+      player.y = startY - player.h;
+      player.vx = 0;
+      player.vy = 0;
+
+      let previousX = startX;
+      for (let layer = 2; layer <= 5; layer++) {
+        previousX = getPlatformX(previousX, layer);
+        spawnPlatform(startY - (layer - 1) * PLATFORM_GAP, layer, previousX);
+      }
+
+      previousX = startX;
+      for (let layer = 6; layer <= 8; layer++) {
+        previousX = getPlatformX(previousX, layer);
+        spawnPlatform(startY + (layer - 5) * PLATFORM_GAP, layer, previousX);
+      }
+    }
+
+    function triggerGameOver() {
+      if (gameState !== "PLAYING") return;
+      gameState = "DEAD_ANIM";
+      createDeathFlames();
+      if (audioEngine) audioEngine.playGameOver();
+      setTimeout(() => {
+        endGame();
+      }, 1200);
+    }
+
+    function endGame() {
+      gameState = "DEAD";
+      deathModal.style.display = "block";
+      deathSummary.innerText = `本局下潜至第 ${score} 层。`;
+      if (currentSpark) {
+        quote.innerText = `“${currentSpark.text}” —— ${currentSpark.author}`;
+      } else {
+        quote.innerText = "这一次没有带回新的星火，但火种仍在。";
+      }
+      renderRunSparks();
+    }
+
+    function updateGame() {
+      if (gameState !== "PLAYING") return;
+
+      updateDifficulty();
+      if (touchDirection === -1) player.vx = -7;
+      if (touchDirection === 1) player.vx = 7;
+
+      player.update();
+
+      platforms.forEach((platform) => {
+        platform.y -= scrollSpeed;
+
+        if (platform.hasStar && !platform.starTaken) {
+          const starX = platform.x + platform.w / 2;
+          const starY = platform.y - 14;
+          const overlap =
+            player.x + player.w > starX - 12 &&
+            player.x < starX + 12 &&
+            player.y + player.h > starY - 12 &&
+            player.y < starY + 12;
+          if (overlap) {
+            collectStar(platform);
+          }
+        }
+
+        const hitsTop =
+          player.vy > 0 &&
+          player.x + player.w > platform.x &&
+          player.x < platform.x + platform.w &&
+          player.y + player.h > platform.y &&
+          player.y + player.h < platform.y + platform.h + player.vy;
+
+        if (hitsTop) {
+          player.y = platform.y - player.h;
+          player.vy = -0.12;
+          createRipple(player.x + player.w / 2, platform.y);
+          if (audioEngine) audioEngine.playJump();
+
+          if (platform.type === "SPIKE") {
+            hp = Math.max(0, hp - 12);
+            if (audioEngine) audioEngine.playHurt();
+          }
+          if (platform.type === "SPRING") {
+            player.vy = -15;
+          }
+          if (platform.type === "CONVEYOR_L") {
+            player.x -= 3;
+          }
+          if (platform.type === "CONVEYOR_R") {
+            player.x += 3;
+          }
+          if (platform.type === "FLIP") {
+            platform.state = 18;
+          }
+        }
+
+        if (platform.state > 0) {
+          platform.state -= 1;
+        }
+      });
+
+      if (platforms[0] && platforms[0].y < -26) {
+        platforms.shift();
+        score++;
+        const nextLayer = score + platforms.length + 1;
+        const lowest = platforms[platforms.length - 1];
+        const nextX = getPlatformX(lowest ? lowest.x : null, nextLayer);
+        spawnPlatform((lowest ? lowest.y : canvas.height) + PLATFORM_GAP, nextLayer, nextX);
+      }
+
+      platforms = platforms.filter((platform) => platform.y < canvas.height + 40);
+
+      if (player.y < 18) {
+        hp = Math.max(0, hp - 1.2);
+        player.vy = 2;
+        if (audioEngine) audioEngine.playHurt();
+      }
+
+      if (hp <= 0 || player.y > canvas.height) {
+        triggerGameOver();
+      }
+    }
+
+    function drawGame() {
+      drawStarfield();
+      drawCeiling();
+
+      platforms.forEach((platform) => platform.draw());
+
+      trailParticles = updateParticleList(trailParticles, 0.004);
+      drawParticleList(trailParticles, 8);
+
+      if (gameState === "PLAYING" || gameState === "START") {
+        player?.draw();
+      }
+
+      deathParticles = updateParticleList(deathParticles, -0.012);
+      drawParticleList(deathParticles, 12);
+
+      updateHud();
+    }
+
+    function loop() {
+      updateGame();
+      drawGame();
+      requestAnimationFrame(loop);
+    }
+
+    window.addEventListener("resize", resize);
+    resize();
+
+    window.addEventListener("keydown", (event) => {
+      if (!player || gameState !== "PLAYING") return;
+      if (event.key === "ArrowLeft") player.vx = -7;
+      if (event.key === "ArrowRight") player.vx = 7;
+    });
+
+    window.addEventListener("keyup", () => {
+      if (!player || gameState !== "PLAYING") return;
+      player.vx = 0;
+    });
+
+    canvas.addEventListener("touchstart", (event) => {
+      if (!player || gameState !== "PLAYING") return;
+      const x = event.touches[0].clientX;
+      touchDirection = x < window.innerWidth / 2 ? -1 : 1;
+    }, { passive: true });
+
+    canvas.addEventListener("touchend", () => {
+      touchDirection = 0;
+      if (player) player.vx = 0;
+    });
+
+    startBtn.addEventListener("click", initGame);
+    restartBtn.addEventListener("click", initGame);
+    openGalleryBtn.addEventListener("click", () => {
+      deathModal.style.display = "none";
+      toggleGallery(true);
+    });
+    closeGalleryBtn.addEventListener("click", () => toggleGallery(false));
+
+    canvas.addEventListener("click", () => {
+      if (gameState === "START") {
+        initGame();
+      }
+    });
+
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
